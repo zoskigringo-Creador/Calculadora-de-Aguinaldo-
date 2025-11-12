@@ -4,12 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadoras Laborales - Paraguay (v5.2.0)</title>
+    <title>Calculadoras Laborales - Paraguay (v5.7.0)</title>
     <!-- 1. Carga de Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- NUEVO: Carga de jsPDF para exportar -->
+    <!-- NUEVO: Carga de jsPDF y html2canvas para PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <!-- 2. Script para evitar "flash" del Modo Oscuro -->
     <script>
@@ -23,7 +24,7 @@
 
     <!-- 3. Carga de Fuente (Inter) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- 4. Estilos CSS -->
@@ -42,7 +43,6 @@
 
         /* Estilos del Modal */
         #welcomeModal { transition: opacity 0.3s ease-in-out; }
-        #appContainer.hidden + footer { display: none; }
 
         /* Animación de resultado */
         @keyframes fadeInScaleUp {
@@ -51,24 +51,46 @@
         }
         .animate-result { animation: fadeInScaleUp 0.4s ease-out forwards; }
 
-        /* Estilo botones de acción */
+        /* Estilo botones de acción (PDF) */
         .action-btn { transition: transform 0.1s ease; }
         .action-btn:active { transform: scale(0.9); }
 
-        /* NUEVO: Estilos para el Sidebar */
-        #sidebar { transition: transform 0.3s ease-in-out; }
-        #sidebarOverlay { transition: opacity 0.3s ease-in-out; }
-        .sidebar-item { @apply flex items-center p-3 text-base font-medium text-gray-700 rounded-lg hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700; }
-        .sidebar-item-active { @apply flex items-center p-3 text-base font-medium text-white bg-blue-600 rounded-lg dark:bg-blue-600 dark:text-white; }
+        /* --- v5.7.0 --- */
+        /* Transición suave para el Sidebar */
+        #sidebar { 
+            transition: transform 0.3s ease-in-out; 
+        }
+        #sidebarOverlay { 
+            transition: opacity 0.3s ease-in-out; 
+        }
         
-        /* NUEVO: Estilos para el Acordeón FAQ (reemplaza <details>) */
+        /* Botones del Menú (fondo azul cuando está activo) */
+        .sidebar-item-active { 
+            @apply bg-blue-600 text-white dark:bg-blue-600; 
+        }
+
+        /* Transición suave al cambiar de panel */
+        .calculator-panel {
+            animation: panelFadeIn 0.5s ease-out forwards;
+        }
+        @keyframes panelFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Estilos para el Acordeón FAQ (Tarjetas separadas) */
         .faq-question {
             transition: background-color 0.2s ease;
         }
         .faq-answer {
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease-out;
+            transition: max-height 0.4s ease-out, padding 0.4s ease-out;
+            padding-top: 0;
+        }
+        .faq-answer.open {
+            padding-top: 1rem; /*equivale a mt-4 */
+            max-height: 500px; /* altura suficiente */
         }
         
         /* Estilo inputs de fecha y modo oscuro */
@@ -78,7 +100,7 @@
 
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-0 md:p-4 dark:bg-gray-900 dark:text-gray-200">
+<body class="bg-gray-100 min-h-screen flex flex-col items-center dark:bg-gray-900 dark:text-gray-200">
 
     <!-- 1. Pantalla de Bienvenida y Términos (Modal) -->
     <div id="welcomeModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm">
@@ -88,10 +110,10 @@
             
             <div class="h-48 overflow-y-auto p-4 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 mb-6 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300">
                 <h3 class="font-semibold text-gray-800 mb-2 dark:text-gray-100">Términos y Condiciones de Uso</h3>
-                <p class="mb-2">Esta calculadora fue creada por Rodrigo Cabrera como un proyecto personal y se distribuye de forma gratuita (publicada en GitHub).</p>
+                <p class="mb-2">Esta calculadora se distribuye de forma gratuita (publicada en GitHub).</p>
                 <p class="mb-2"><strong>1. Propósito:</strong> La calculadora es una herramienta de <strong class="font-semibold">estimación</strong> y no constituye asesoramiento legal, financiero ni contable.</p>
                 <p class="mb-2"><strong>2. Privacidad de Datos:</strong> No se recopila, almacena ni utiliza ninguno de los datos numéricos que ingreses.</p>
-                <p class="mb-4"><strong>3. Deslinde de Responsabilidad:</strong> El creador (Rodrigo Cabrera) no se hace responsable por la precisión de los cálculos. El uso de esta herramienta es bajo tu propia responsabilidad.</p>
+                <p class="mb-4"><strong>3. Deslinde de Responsabilidad:</strong> El creador no se hace responsable por la precisión de los cálculos. El uso de esta herramienta es bajo tu propia responsabilidad.</p>
             </div>
             
             <button id="acceptBtn" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold text-lg hover:bg-blue-700 transition duration-300 shadow-md transform hover:-translate-y-0.5">
@@ -102,7 +124,7 @@
 
     <!-- 2. NUEVA ESTRUCTURA: Encabezado (Header) y Menú Lateral (Sidebar) -->
     
-    <!-- Encabezado Fijo -->
+    <!-- Encabezado Fijo (v5.7.0 - Unificado) -->
     <header id="header" class="hidden sticky top-0 w-full bg-white shadow-md z-30 dark:bg-gray-800">
         <div class="max-w-4xl mx-auto px-4">
             <div class="flex justify-between items-center h-16">
@@ -112,7 +134,7 @@
                 </button>
                 
                 <!-- Reloj (CORREGIDO - se actualiza) -->
-                <div id="clockDisplay" class="flex gap-4 text-gray-600 dark:text-gray-400 text-sm font-medium">
+                <div id="clockDisplay" class="flex flex-col sm:flex-row gap-0 sm:gap-4 text-gray-600 dark:text-gray-400 text-xs sm:text-sm font-medium text-right">
                     <div id="date"></div>
                     <div id="time"></div>
                 </div>
@@ -120,32 +142,54 @@
         </div>
     </header>
 
-    <!-- Menú Lateral (Sidebar) -->
-    <aside id="sidebar" class="fixed top-0 left-0 w-64 h-screen bg-white dark:bg-gray-800 z-40 shadow-lg transform -translate-x-full">
+    <!-- Menú Lateral (Sidebar v5.7.0 con ÍCONOS) -->
+    <aside id="sidebar" class="fixed top-0 left-0 w-64 h-screen bg-white dark:bg-gray-800 z-50 shadow-lg transform -translate-x-full">
         <div class="p-4">
-            <h2 class="text-2xl font-bold text-blue-700 dark:text-blue-400 mb-4">Calculadoras</h2>
+            <h2 class="text-2xl font-bold text-blue-700 dark:text-blue-400 mb-6">Calculadoras</h2>
             <nav class="space-y-2">
-                <!-- Los enlaces ahora son botones que cambian de panel -->
-                <button id="navBtnAguinaldo" class="sidebar-item-active w-full">Aguinaldo</button>
-                <button id="navBtnSalario" class="sidebar-item w-full">Salario Neto</button>
-                <button id="navBtnVacaciones" class="sidebar-item w-full">Vacaciones</button>
-                <button id="navBtnHorasExtras" class="sidebar-item w-full">Horas Extras</button>
-                <button id="navBtnLiquidacion" class="sidebar-item w-full">Liquidación</button>
-                <button id="navBtnMinimo" class="sidebar-item w-full">Salario Mínimo</button>
-                <button id="navBtnFaq" class="sidebar-item w-full">Preguntas</button>
+                
+                <!-- Botones con Íconos (v5.7.0) -->
+                <button id="navBtnAguinaldo" class="w-full flex items-center p-3 text-base font-medium rounded-lg transition-colors duration-150 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 active:bg-blue-100 dark:active:bg-gray-600">
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0c-1.657 0-3-.895-3-2s1.343-2 3-2 3-.895 3-2-1.343-2-3-2m0 8c-1.11 0-2.08-.402-2.599-1M12 16v1m0-1v-8"></path></svg>
+                    <span class="ml-3">Aguinaldo</span>
+                </button>
+                <button id="navBtnSalario" class="w-full flex items-center p-3 text-base font-medium rounded-lg transition-colors duration-150 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 active:bg-blue-100 dark:active:bg-gray-600">
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    <span class="ml-3">Salario Neto</span>
+                </button>
+                <button id="navBtnVacaciones" class="w-full flex items-center p-3 text-base font-medium rounded-lg transition-colors duration-150 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 active:bg-blue-100 dark:active:bg-gray-600">
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 11a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3zM15 11V9a2 2 0 00-2-2m0 0H9m0 0a2 2 0 00-2 2v2m10-2v10a2 2 0 01-2 2H7a2 2 0 01-2-2V9a2 2 0 012-2h2M9 7v2m6-2v2"></path></svg>
+                    <span class="ml-3">Vacaciones</span>
+                </button>
+                <button id="navBtnHorasExtras" class="w-full flex items-center p-3 text-base font-medium rounded-lg transition-colors duration-150 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 active:bg-blue-100 dark:active:bg-gray-600">
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span class="ml-3">Horas Extras</span>
+                </button>
+                <button id="navBtnLiquidacion" class="w-full flex items-center p-3 text-base font-medium rounded-lg transition-colors duration-150 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 active:bg-blue-100 dark:active:bg-gray-600">
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span class="ml-3">Liquidación</span>
+                </button>
+                <button id="navBtnMinimo" class="w-full flex items-center p-3 text-base font-medium rounded-lg transition-colors duration-150 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 active:bg-blue-100 dark:active:bg-gray-600">
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"></path></svg>
+                    <span class="ml-3">Salario Mínimo</span>
+                </button>
+                <button id="navBtnFaq" class="w-full flex items-center p-3 text-base font-medium rounded-lg transition-colors duration-150 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 active:bg-blue-100 dark:active:bg-gray-600">
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span class="ml-3">Preguntas</span>
+                </button>
             </nav>
 
             <hr class="my-6 border-gray-200 dark:border-gray-700">
 
             <!-- Acciones (Modo Oscuro y Compartir) -->
             <div class="space-y-2">
-                <button id="themeToggleBtn" class="sidebar-item w-full">
-                    <svg id="iconSun" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                    <svg id="iconMoon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                <button id="themeToggleBtn" class="w-full flex items-center p-3 text-base font-medium rounded-lg transition-colors duration-150 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700">
+                    <svg id="iconSun" class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    <svg id="iconMoon" class="w-5 h-5 hidden text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
                     <span class="ml-3">Modo Oscuro</span>
                 </button>
-                <button id="shareBtn" class="sidebar-item w-full">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.658 14.19 8 15 8z"></path></svg>
+                <button id="shareBtn" class="w-full flex items-center p-3 text-base font-medium rounded-lg transition-colors duration-150 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700">
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.658 14.19 8 15 8z"></path></svg>
                     <span class="ml-3">Compartir App</span>
                 </button>
                 <span id="copyLinkSuccess" class="hidden text-xs text-green-600 dark:text-green-400 text-center">¡Enlace copiado!</span>
@@ -154,11 +198,11 @@
         </div>
     </aside>
     <!-- Overlay para el Sidebar (en modo móvil) -->
-    <div id="sidebarOverlay" class="hidden fixed inset-0 z-30 bg-black/50"></div>
+    <div id="sidebarOverlay" class="hidden fixed inset-0 z-40 bg-black/50"></div>
 
 
-    <!-- Contenedor principal de los Paneles -->
-    <main id="appContainer" class="hidden w-full max-w-3xl mx-auto p-4 md:p-10 md:mt-4 md:rounded-2xl md:shadow-xl bg-white dark:bg-gray-800">
+    <!-- Contenedor principal de los Paneles (v5.7.0 - Unificado y Centrado) -->
+    <main id="appContainer" class="hidden w-full max-w-3xl mx-auto p-4 md:p-10 mt-4 mb-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl">
 
         <!-- --- PANEL 1: CALCULADORA DE AGUINALDO --- -->
         <div id="panelAguinaldo" class="calculator-panel">
@@ -282,16 +326,10 @@
                     </p>
                     <!-- Botones de Acción de Resultado -->
                     <div class="flex flex-col">
-                        <button id="copyBtn" title="Copiar monto" class="action-btn p-2 text-gray-500 hover:text-green-700 hover:bg-green-100 rounded-lg transition-all duration-200 dark:text-gray-400 dark:hover:text-green-300 dark:hover:bg-green-900/70">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                        </button>
                         <button data-result-id="aguinaldo" title="Exportar PDF" class="export-pdf-btn action-btn p-2 text-gray-500 hover:text-red-700 hover:bg-red-100 rounded-lg transition-all duration-200 dark:text-gray-400 dark:hover:text-red-300 dark:hover:bg-red-900/70">
                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v4.586A1 1 0 0115.586 9H14a1 1 0 01-1-1V6a1 1 0 00-1-1H7a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 01-.586-.414V4zm10 8a1 1 0 011-1h.586a1 1 0 01.586.414V16a2 2 0 01-2 2H5a2 2 0 01-2-2v-4.586A1 1 0 013.414 11H5a1 1 0 011 1v1a1 1 0 001 1h6a1 1 0 001-1v-1zM9 13a1 1 0 112 0v2a1 1 0 11-2 0v-2z" clip-rule="evenodd"></path></svg>
                         </button>
                     </div>
-                    <span id="copySuccess" class="hidden absolute -right-4 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs font-medium px-2 py-1 rounded-md">
-                        ¡Copiado!
-                    </span>
                 </div>
 
                 <p id="infoLey" class="text-sm text-gray-600 mt-4 max-w-md mx-auto dark:text-gray-400">
@@ -310,11 +348,10 @@
             </p>
 
             <div class="mb-6">
-                <div class="flex justify-between items-center mb-1">
-                    <label for="salarioBruto" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tu Salario Bruto Mensual (Gs.)</label>
-                    <button class="use-sml-btn text-xs text-blue-600 dark:text-blue-400 hover:underline" data-target-input="salarioBruto">Usar Mínimo</button>
-                </div>
+                <label for="salarioBruto" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Tu Salario Bruto Mensual (Gs.)</label>
                 <input type="text" id="salarioBruto" placeholder="Ej: Gs. 3.000.000" inputmode="numeric" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400">
+                <!-- Botón "Usar Mínimo" v5.6.0 (Pequeño) -->
+                <button class="use-sml-btn text-sm text-blue-600 dark:text-blue-400 hover:underline mt-2" data-target-input="salarioBruto">Usar Salario Mínimo</button>
             </div>
 
             <!-- Botones de Acción (Salario) -->
@@ -369,11 +406,9 @@
                     <input type="date" id="fechaIngreso" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400">
                 </div>
                 <div>
-                    <div class="flex justify-between items-center mb-1">
-                        <label for="salarioVacaciones" class="block text-sm font-medium text-gray-700 dark:text-gray-300">2. Tu Salario Bruto Mensual (Gs.)</label>
-                        <button class="use-sml-btn text-xs text-blue-600 dark:text-blue-400 hover:underline" data-target-input="salarioVacaciones">Usar Mínimo</button>
-                    </div>
+                    <label for="salarioVacaciones" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">2. Tu Salario Bruto Mensual (Gs.)</label>
                     <input type="text" id="salarioVacaciones" placeholder="Ej: Gs. 3.000.000" inputmode="numeric" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400">
+                    <button class="use-sml-btn text-sm text-blue-600 dark:text-blue-400 hover:underline mt-2" data-target-input="salarioVacaciones">Usar Salario Mínimo</button>
                 </div>
             </div>
 
@@ -434,11 +469,9 @@
 
             <div class="space-y-6 mb-8">
                 <div>
-                    <div class="flex justify-between items-center mb-1">
-                        <label for="salarioHorasExtras" class="block text-sm font-medium text-gray-700 dark:text-gray-300">1. Tu Salario Bruto Mensual (Gs.)</label>
-                        <button class="use-sml-btn text-xs text-blue-600 dark:text-blue-400 hover:underline" data-target-input="salarioHorasExtras">Usar Mínimo</button>
-                    </div>
+                    <label for="salarioHorasExtras" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">1. Tu Salario Bruto Mensual (Gs.)</label>
                     <input type="text" id="salarioHorasExtras" placeholder="Ej: Gs. 3.000.000" inputmode="numeric" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400">
+                    <button class="use-sml-btn text-sm text-blue-600 dark:text-blue-400 hover:underline mt-2" data-target-input="salarioHorasExtras">Usar Salario Mínimo</button>
                 </div>
                 
                 <div class="p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg dark:bg-blue-900/50 dark:border-blue-700">
@@ -518,20 +551,20 @@
                 Calcula tu liquidación final según la causa de salida.
             </p>
 
-            <!-- NUEVO: Selector de Causa -->
+            <!-- Selector de Causa -->
             <div class="mb-6">
                 <label class="block text-base font-medium text-gray-800 mb-3 dark:text-gray-200">1. Causa de Salida</label>
                 <div class="flex flex-col sm:flex-row gap-4">
                     <label for="causaRenuncia" class="flex-1 p-4 border rounded-lg cursor-pointer dark:border-gray-600 dark:hover:bg-gray-700">
                         <input type="radio" id="causaRenuncia" name="causaSalida" value="renuncia" class="accent-blue-600" checked>
                         <span class="ml-3 font-medium text-gray-700 dark:text-gray-200">Renuncia Voluntaria</span>
-                        <!-- NUEVA OBSERVACIÓN LEGAL -->
+                        <!-- Observación Legal -->
                         <p class="text-xs text-gray-500 ml-6 mt-1 dark:text-gray-400">El trabajador debe dar un preaviso por escrito al empleador (Art. 87).</p>
                     </label>
                     <label for="causaDespido" class="flex-1 p-4 border rounded-lg cursor-pointer dark:border-gray-600 dark:hover:bg-gray-700">
                         <input type="radio" id="causaDespido" name="causaSalida" value="despido" class="accent-blue-600">
                         <span class="ml-3 font-medium text-gray-700 dark:text-gray-200">Despido Injustificado</span>
-                        <!-- NUEVA OBSERVACIÓN LEGAL -->
+                        <!-- Observación Legal -->
                         <p class="text-xs text-gray-500 ml-6 mt-1 dark:text-gray-400">El empleador debe pagar Preaviso (Art. 87) e Indemnización (Art. 91).</p>
                     </label>
                 </div>
@@ -547,11 +580,9 @@
                     <input type="date" id="fechaSalida" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400">
                 </div>
                 <div>
-                    <div class="flex justify-between items-center mb-1">
-                        <label for="salarioBrutoLiquidacion" class="block text-sm font-medium text-gray-700 dark:text-gray-300">4. Tu Salario Bruto Mensual (Gs.)</label>
-                        <button class="use-sml-btn text-xs text-blue-600 dark:text-blue-400 hover:underline" data-target-input="salarioBrutoLiquidacion">Usar Mínimo</button>
-                    </div>
+                    <label for="salarioBrutoLiquidacion" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">4. Tu Salario Bruto Mensual (Gs.)</label>
                     <input type="text" id="salarioBrutoLiquidacion" placeholder="Ej: Gs. 3.000.000" inputmode="numeric" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400">
+                    <button class="use-sml-btn text-sm text-blue-600 dark:text-blue-400 hover:underline mt-2" data-target-input="salarioBrutoLiquidacion">Usar Salario Mínimo</button>
                 </div>
                 <div>
                     <label for="totalCobradoAnioLiquidacion" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">5. Total cobrado este año (para aguinaldo)</label>
@@ -608,7 +639,7 @@
             </div>
         </div>
 
-        <!-- --- PANEL 6: SALARIO MÍNIMO --- -->
+        <!-- --- PANEL 6: SALARIO MÍNIMO (v5.6.0) --- -->
         <div id="panelMinimo" class="calculator-panel hidden">
             <h1 class="text-3xl md:text-4xl font-bold text-blue-700 mb-2 text-center dark:text-blue-400">
                 Salario Mínimo Vigente
@@ -630,35 +661,35 @@
             <div class="mt-8 space-y-4">
                 <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-100">Desglose de Referencia</h3>
                 
-                <div class="p-4 border rounded-lg dark:border-gray-600">
+                <div class="p-4 border rounded-lg dark:border-gray-700">
                     <div class="flex justify-between">
                         <span class="text-gray-700 dark:text-gray-300">Salario Neto (descuento 9% IPS):</span>
                         <span id="smlNeto" class="font-bold text-green-700 dark:text-green-300">Gs. 0</span>
                     </div>
                 </div>
 
-                <div class="p-4 border rounded-lg dark:border-gray-600">
+                <div class="p-4 border rounded-lg dark:border-gray-700">
                     <div class="flex justify-between">
-                        <span class="text-gray-700 dark:text-gray-300">Jornal Mínimo (Sueldo / 30):</span>
+                        <span class="text-gray-700 dark:text-gray-300">Jornal Mínimo (Sueldo / 26):</span>
                         <span id="smlJornal" class="font-bold text-gray-800 dark:text-gray-100">Gs. 0</span>
                     </div>
                 </div>
 
-                <div class="p-4 border rounded-lg dark:border-gray-600">
+                <div class="p-4 border rounded-lg dark:border-gray-700">
                     <div class="flex justify-between">
                         <span class="text-gray-700 dark:text-gray-300">Valor por Hora (Jornal / 8):</span>
                         <span id="smlHora" class="font-bold text-gray-800 dark:text-gray-100">Gs. 0</span>
                     </div>
                 </div>
 
-                <div class="p-4 border rounded-lg dark:border-gray-600">
+                <div class="p-4 border rounded-lg dark:border-gray-700">
                     <div class="flex justify-between">
                         <span class="text-gray-700 dark:text-gray-300">Valor Hora Extra Diurna (50%):</span>
                         <span id="smlHoraDiurna" class="font-bold text-gray-800 dark:text-gray-100">Gs. 0</span>
                     </div>
                 </div>
 
-                <div class="p-4 border rounded-lg dark:border-gray-600">
+                <div class="p-4 border rounded-lg dark:border-gray-700">
                     <div class="flex justify-between">
                         <span class="text-gray-700 dark:text-gray-300">Valor Hora Extra Nocturna (100%):</span>
                         <span id="smlHoraNocturna" class="font-bold text-gray-800 dark:text-gray-100">Gs. 0</span>
@@ -668,39 +699,28 @@
             </div>
         </div>
 
-        <!-- --- PANEL 7: PREGUNTAS FRECUENTES (FAQ - CORREGIDO) --- -->
+        <!-- --- PANEL 7: PREGUNTAS FRECUENTES (FAQ - v5.6.0) --- -->
         <div id="panelFaq" class="calculator-panel hidden">
             <h1 class="text-3xl md:text-4xl font-bold text-blue-700 mb-8 text-center dark:text-blue-400">
                 Preguntas Frecuentes
             </h1>
 
             <div class="space-y-4" id="faqAccordion">
-                <!-- Las preguntas ahora son generadas por JS, pero así es la estructura: -->
-                <!--
-                <div class="faq-item p-4 bg-gray-50 rounded-lg border dark:bg-gray-700/50 dark:border-gray-600">
-                    <div class="faq-question flex justify-between items-center cursor-pointer font-medium text-gray-900 dark:text-gray-100">
-                        <span>¿Qué se incluye en el cálculo del Aguinaldo?</span>
-                        <span class="faq-icon text-xl font-light">+</span>
-                    </div>
-                    <div class="faq-answer mt-4 text-gray-700 dark:text-gray-300">
-                        <p>El cálculo debe incluir ...</p>
-                    </div>
-                </div>
-                -->
+                <!-- Las preguntas se generan con JS -->
             </div>
         </div>
     </main>
 
     <!-- 3. Pie de Página (Footer) -->
-    <footer class="relative text-center text-gray-500 text-sm py-6 dark:text-gray-400 md:ml-64">
-        Calculadoras Laborales v5.2.0 - Creado por Rodrigo Cabrera
+    <footer id="footer" class="hidden text-center text-gray-500 text-sm py-6 dark:text-gray-400">
+        Herramientas Laborales v5.7.0 - Creado por Rodrigo Cabrera
     </footer>
 
-    <!-- 4. Lógica de JavaScript (Actualizada para v5.1.0) -->
+    <!-- 4. Lógica de JavaScript (Actualizada para v5.7.0) -->
     <script>
         // --- Constantes Globales (Actualizadas) ---
         const SALARIO_MINIMO_VIGENTE = 2899048;
-        const JORNAL_MINIMO_VIGENTE = 111502;
+        const JORNAL_MINIMO_VIGENTE = 111502; // (Sueldo / 26) según ley
         const FECHA_VIGENCIA = "1 de Julio 2025";
         
         // Objeto global para almacenar los datos de los resultados para el PDF
@@ -713,14 +733,14 @@
             const acceptBtn = document.getElementById('acceptBtn');
             const appContainer = document.getElementById('appContainer');
             const header = document.getElementById('header');
-            const clockDisplay = document.getElementById('clockDisplay'); 
+            const footer = document.getElementById('footer');
             const dateEl = document.getElementById('date');
             const timeEl = document.getElementById('time');
             const themeToggleBtn = document.getElementById('themeToggleBtn');
             const iconSun = document.getElementById('iconSun');
             const iconMoon = document.getElementById('iconMoon');
             
-            // --- NUEVO: Elementos del Sidebar ---
+            // --- Elementos del Sidebar (v5.7.0) ---
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
             const menuToggleBtn = document.getElementById('menuToggleBtn');
@@ -739,8 +759,6 @@
             const fullYearForm = document.getElementById('fullYearForm');
             const partialYearForm = document.getElementById('partialYearForm');
             const partialTotalInput = document.getElementById('partialTotal');
-            const copyBtn = document.getElementById('copyBtn');
-            const copySuccess = document.getElementById('copySuccess');
             const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
             const inputs = meses.map(id => document.getElementById(id));
 
@@ -834,9 +852,10 @@
                 }, 300); 
                 appContainer.classList.remove('hidden');
                 header.classList.remove('hidden'); // Mostrar header
+                footer.classList.remove('hidden'); // Mostrar footer
             });
             
-            // --- NUEVO: Lógica del Sidebar y Navegación ---
+            // --- Lógica del Sidebar y Navegación (v5.7.0) ---
             function toggleSidebar() {
                 sidebar.classList.toggle('-translate-x-full');
                 sidebarOverlay.classList.toggle('hidden');
@@ -859,17 +878,20 @@
                     }
                     
                     // Actualizar estado activo del botón
-                    navButtons.forEach(btn => btn.classList.replace('sidebar-item-active', 'sidebar-item'));
-                    button.classList.replace('sidebar-item', 'sidebar-item-active');
+                    navButtons.forEach(btn => btn.classList.remove('sidebar-item-active'));
+                    button.classList.add('sidebar-item-active');
                     
-                    // Cerrar sidebar en móvil
-                    if (window.innerWidth < 768) {
-                        toggleSidebar();
-                    }
+                    // Cerrar sidebar en móvil (y ahora en desktop también, diseño unificado)
+                    toggleSidebar();
                 });
             });
 
-            // --- Lógica de MODO OSCURO ---
+            // Activar el primer botón por defecto
+            document.getElementById('navBtnAguinaldo').classList.add('sidebar-item-active');
+            document.getElementById('panelAguinaldo').classList.remove('hidden');
+
+
+            // --- Lógica de MODO OSCURO (CORREGIDA) ---
             function setIconVisibility() {
                 if (document.documentElement.classList.contains('dark')) {
                     iconSun.classList.add('hidden');
@@ -912,7 +934,7 @@
                 return parseFloat(inputElement.value.replace(/\./g, '')) || 0;
             };
 
-            // --- NUEVO: Lógica Botón "Usar Mínimo" ---
+            // --- Lógica Botón "Usar Mínimo" (v5.6.0) ---
             useSmlBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
                     const targetInputId = btn.dataset.targetInput;
@@ -944,31 +966,17 @@
                 partialTotalInput.value = '';
                 resultadoContenedor.classList.add('hidden'); 
                 resultadoContenedor.classList.remove('animate-result'); 
-                copySuccess.classList.add('hidden'); 
                 (calcTypeFull.checked ? inputs[0] : partialTotalInput).focus();
             };
 
             calcTypeFull.addEventListener('change', () => { fullYearForm.classList.remove('hidden'); partialYearForm.classList.add('hidden'); limpiarAguinaldo(); });
             calcTypePartial.addEventListener('change', () => { fullYearForm.classList.add('hidden'); partialYearForm.classList.remove('hidden'); limpiarAguinaldo(); });
-            copyBtn.addEventListener('click', () => copyToClipboard(Math.round(pdfData.aguinaldo?.aguinaldoBruto || 0), copySuccess));
             calcularBtn.addEventListener('click', calcularAguinaldo);
             limpiarBtn.addEventListener('click', limpiarAguinaldo);
             inputs.forEach(input => { input.addEventListener('input', formatInput); input.addEventListener('keypress', (e) => { if (e.key === 'Enter') calcularAguinaldo(); }); });
             partialTotalInput.addEventListener('input', formatInput);
             partialTotalInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') calcularAguinaldo(); });
 
-            function copyToClipboard(text, successElement) {
-                const tempInput = document.createElement('input');
-                tempInput.value = text;
-                document.body.appendChild(tempInput);
-                tempInput.select();
-                try {
-                    document.execCommand('copy');
-                    successElement.classList.remove('hidden');
-                    setTimeout(() => successElement.classList.add('hidden'), 2000);
-                } catch (err) { console.error('Error al copiar:', err); }
-                document.body.removeChild(tempInput);
-            }
 
             // --- Lógica PESTAÑA 2: SALARIO NETO ---
             const calcularSalarioNeto = () => {
@@ -1135,23 +1143,21 @@
                 // --- Cálculos por Despido ---
                 let montoPreaviso = 0;
                 let montoIndemnizacion = 0;
+                let antiguedadTotalDias = (fechaFin.getTime() - fechaInicio.getTime()) / (1000 * 60 * 60 * 24);
 
                 if (esDespido) {
                     causaResultado.textContent = "Despido Injustificado";
                     
                     // 3. Preaviso (Art. 87)
-                    const diffMilis = fechaFin.getTime() - fechaInicio.getTime();
-                    const diffDias = diffMilis / (1000 * 60 * 60 * 24);
-                    
-                    if (diffDias > 90) { // Mayor a 3 meses (periodo de prueba)
-                        if (antiguedadAnios < 1) montoPreaviso = salarioBruto / 30 * 30; // 30 dias
-                        else if (antiguedadAnios <= 5) montoPreaviso = salarioBruto / 30 * 45; // 45 dias
-                        else if (antiguedadAnios <= 10) montoPreaviso = salarioBruto / 30 * 60; // 60 dias
+                    if (antiguedadTotalDias > 90) { // Mayor a 3 meses (periodo de prueba)
+                        if (antiguedadTotalDias <= 365) montoPreaviso = salarioBruto / 30 * 30; // 30 dias
+                        else if (antiguedadTotalDias <= (365 * 5)) montoPreaviso = salarioBruto / 30 * 45; // 45 dias
+                        else if (antiguedadTotalDias <= (365 * 10)) montoPreaviso = salarioBruto / 30 * 60; // 60 dias
                         else montoPreaviso = salarioBruto / 30 * 90; // 90 dias
                     }
 
                     // 4. Indemnización (Art. 91)
-                    if (antiguedadAnios > 0) {
+                    if (antiguedadAnios >= 1) {
                         montoIndemnizacion = (salarioBruto / 30 * 15) * antiguedadAnios; // 15 jornales por año
                     }
                     
@@ -1201,28 +1207,26 @@
             limpiarLiquidacionBtn.addEventListener('click', limpiarLiquidacion);
             salarioBrutoLiquidacion.addEventListener('input', formatInput);
             totalCobradoAnioLiquidacion.addEventListener('input', formatInput);
-            causaRenuncia.addEventListener('change', () => { detallePreavisoCont.classList.add('hidden'); detalleIndemnizacionCont.classList.add('hidden'); });
-            causaDespido.addEventListener('change', () => { /* No hacemos nada, el cálculo lo mostrará */ });
 
 
-            // --- Lógica PESTAÑA 6: SALARIO MÍNIMO ---
+            // --- Lógica PESTAÑA 6: SALARIO MÍNIMO (v5.6.0) ---
             function popularSalarioMinimo() {
                 smlVigente.textContent = formatearMoneda(SALARIO_MINIMO_VIGENTE);
                 smlFecha.textContent = FECHA_VIGENCIA;
 
                 const salarioNeto = SALARIO_MINIMO_VIGENTE * 0.91; // 100% - 9%
                 const jornal = JORNAL_MINIMO_VIGENTE; 
-                const horaNormal = SALARIO_MINIMO_VIGENTE / 30 / 8; 
+                const horaNormal = jornal / 8; // Art. 238 - (Sueldo / 26) / 8
 
                 smlNeto.textContent = formatearMoneda(salarioNeto);
                 smlJornal.textContent = formatearMoneda(jornal);
                 smlHora.textContent = formatearMoneda(horaNormal);
                 smlHoraDiurna.textContent = formatearMoneda(horaNormal * 1.5);
-                smlHoraNocturna.textContent = formatearMoneda(horaNormal * 2.0);
+                smlHoraNocturna.textContent = formatearMoneda(horaNormal * 2.0); // Nocturna es 30% más, pero extra nocturna es 100% más (Art. 238)
             }
             popularSalarioMinimo(); // Llama a la función al cargar la página
 
-            // --- Lógica PESTAÑA 7: FAQ (CORREGIDO) ---
+            // --- Lógica PESTAÑA 7: FAQ (v5.6.0) ---
             const faqData = [
                 { q: "¿Qué se incluye en el cálculo del Aguinaldo?", a: "El cálculo debe incluir <strong class='font-medium'>todas las remuneraciones</strong> percibidas durante el año. Esto incluye:<ul class='list-disc list-inside ml-4 mt-2'><li>Salario</li><li>Horas Extras</li><li>Comisiones</li><li>Bonificaciones (que no sean por presentismo o puntualidad)</li></ul><p class='mt-2'>El <strong class='font-medium'>Subsidio Familiar</strong> es el único concepto que está legalmente excluido del cálculo.</p>" },
                 { q: "¿El Aguinaldo paga descuento de IPS?", a: "<p><strong class='font-medium text-blue-700 dark:text-blue-400'>NO.</strong> El aguinaldo no está sujeto a ningún descuento.</p><p class='mt-2'>El Artículo 245 del Código Laboral Paraguayo establece que el aguinaldo es <strong class='font-medium'>inembargable</strong> y no se le aplican descuentos de aportes (como IPS) ni embargos judiciales.</p>" },
@@ -1231,27 +1235,28 @@
                 { q: "¿Cómo se pagan las Horas Extras? (Art. 238)", a: "<p>El valor de la hora extra se calcula en base a tu \"valor hora normal\" (Salario / 30 / 8).</p><ul class='list-disc list-inside ml-4 mt-2'><li><strong class='font-medium'>Horas Diurnas:</strong> Se pagan con un <strong class='font-medium'>50% de recargo</strong> (Valor hora x 1.5).</li><li><strong class='font-medium'>Horas Nocturnas:</strong> Se pagan con un <strong class='font-medium'>100% de recargo</strong> (Valor hora x 2.0).</li><li><strong class='font-medium'>Horas en Feriado:</strong> Se pagan con un <strong class='font-medium'>100% de recargo</strong> (Valor hora x 2.0).</li></ul>" },
                 { q: "¿Qué es el Salario Neto?", a: "<p>Es el monto de dinero que recibes \"en mano\" después de aplicar los descuentos obligatorios por ley.</p><ul class='list-disc list-inside ml-4 mt-2'><li><strong class='font-medium'>Salario Bruto:</strong> Es el salario total antes de cualquier descuento.</li><li><strong class='font-medium'>Descuento IPS:</strong> Por ley, se descuenta un <strong class='font-medium'>9%</strong> de tu salario bruto como aporte al Instituto de Previsión Social (IPS).</li><li><strong class='font-medium'>Salario Neto:</strong> Es el Salario Bruto menos el 9% de IPS.</li></ul>" },
                 { q: "¿Qué se cobra en una Liquidación?", a: "<p>Depende de la causa de salida:</p><ul class='list-disc list-inside ml-4 mt-2'><li><strong class='font-medium'>Renuncia Voluntaria:</strong> Cobras Aguinaldo Proporcional y Vacaciones Proporcionales (días generados y no tomados).</li><li><strong class='font-medium'>Despido Injustificado:</strong> Cobras lo mismo que la renuncia, MÁS el pago de Preaviso (si no te avisaron con tiempo) y la Indemnización por antigüedad (15 jornales por cada año trabajado).</li></ul>" },
-                // NUEVA PREGUNTA FRECUENTE
                 { q: "¡Importante! ¿Qué debo tener en cuenta al Renunciar o si me despiden?", a: "<p>El proceso legal es clave. Esta calculadora es solo una guía.</p><ul class='list-disc list-inside ml-4 mt-2'><li class='font-medium'>Al Renunciar:</li><p class='ml-4 mb-2'>Debes presentar tu <strong class='font-medium'>Preaviso por escrito</strong> (con duplicado) a tu empleador con anticipación (Art. 87). Si no lo haces, el empleador podría descontar el monto del preaviso de tu liquidación.</p><li class='font-medium'>Si te Despiden:</li><p class='ml-4'>Si es <strong class='font-medium'>Despido Injustificado</strong>, tienes derecho a Preaviso e Indemnización. Si el empleador alega <strong class='font-medium'>Causa Justificada</strong> (Art. 81, ej: robo, ausencias), no tienes derecho a estos pagos. Esta calculadora <strong class='font-medium'>NO</strong> aplica para despidos justificados.</p></ul>" }
             ];
 
             faqData.forEach(item => {
                 const faqItem = document.createElement('div');
-                faqItem.className = 'faq-item p-4 bg-gray-50 rounded-lg border dark:bg-gray-700/50 dark:border-gray-600';
+                faqItem.className = 'faq-item bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden';
                 
                 faqItem.innerHTML = `
-                    <div class="faq-question flex justify-between items-center cursor-pointer font-medium text-gray-900 dark:text-gray-100">
+                    <div class="faq-question flex justify-between items-center cursor-pointer p-4 font-medium text-gray-900 dark:text-gray-100">
                         <span>${item.q}</span>
-                        <span class="faq-icon text-xl font-light">+</span>
+                        <svg class="faq-icon w-5 h-5 text-gray-500 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
-                    <div class="faq-answer mt-4 text-gray-700 dark:text-gray-300">
-                        ${item.a}
+                    <div class="faq-answer text-gray-700 dark:text-gray-300 px-4">
+                        <div class="pb-4">
+                            ${item.a}
+                        </div>
                     </div>
                 `;
                 faqAccordion.appendChild(faqItem);
             });
 
-            // Lógica del nuevo acordeón
+            // Lógica del nuevo acordeón (v5.6.0)
             faqAccordion.addEventListener('click', function(e) {
                 const question = e.target.closest('.faq-question');
                 if (!question) return;
@@ -1260,14 +1265,12 @@
                 const answer = faqItem.querySelector('.faq-answer');
                 const icon = question.querySelector('.faq-icon');
 
-                if (answer.style.maxHeight) {
-                    // Cerrar
-                    answer.style.maxHeight = null;
-                    icon.textContent = '+';
+                if (answer.classList.contains('open')) {
+                    answer.classList.remove('open');
+                    icon.style.transform = 'rotate(0deg)';
                 } else {
-                    // Abrir
-                    answer.style.maxHeight = answer.scrollHeight + "px";
-                    icon.textContent = '−';
+                    answer.classList.add('open');
+                    icon.style.transform = 'rotate(180deg)';
                 }
             });
 
@@ -1289,11 +1292,18 @@
                     }
                 } catch (err) {
                     console.error('Error al compartir:', err);
-                    copyToClipboard(shareData.url, copyLinkSuccess); // Fallback final
+                    // Fallback para http o si todo falla
+                    try {
+                        await navigator.clipboard.writeText(shareData.url);
+                        copyLinkSuccess.classList.remove('hidden');
+                        setTimeout(() => copyLinkSuccess.classList.add('hidden'), 2000);
+                    } catch (e) {
+                        console.error('Error al copiar al portapapeles:', e);
+                    }
                 }
             });
 
-            // --- NUEVO: Lógica de Exportar PDF ---
+            // --- Lógica de Exportar PDF (v5.6.0 Profesional) ---
             const exportPdfBtns = document.querySelectorAll('.export-pdf-btn');
             const { jsPDF } = window.jspdf;
 
@@ -1302,7 +1312,8 @@
                     const resultId = this.dataset.resultId;
                     const data = pdfData[resultId];
                     if (!data) {
-                        alert("Primero debes calcular un resultado para exportar.");
+                        // Reemplazar alert por un modal si tuviéramos
+                        console.error("Primero debes calcular un resultado para exportar.");
                         return;
                     }
                     generatePDF(resultId, data);
@@ -1313,19 +1324,22 @@
                 const doc = new jsPDF();
                 const fecha = new Date().toLocaleDateString('es-PY');
                 
+                let y = 30; // Posición vertical inicial
+                
+                // Título Principal
                 doc.setFont('Helvetica', 'bold');
                 doc.setFontSize(18);
                 doc.setTextColor(30, 80, 150); // Azul
-                
-                let y = 30; // Posición vertical inicial
-                
+                doc.text(`Resumen de Cálculo`, 20, y);
+                y += 15;
+
                 const addLine = (label, value) => {
                     doc.setFont('Helvetica', 'bold');
                     doc.setTextColor(10, 10, 10);
                     doc.text(label, 20, y);
                     doc.setFont('Helvetica', 'normal');
                     doc.setTextColor(50, 50, 50);
-                    doc.text(value, 100, y);
+                    doc.text(value, 110, y);
                     y += 10;
                 };
                 
@@ -1336,12 +1350,9 @@
                     doc.setFont('Helvetica', 'bold');
                     doc.setTextColor(0, 100, 0); // Verde
                     doc.text(label, 20, y);
-                    doc.text(value, 100, y);
+                    doc.text(value, 110, y);
                     y += 10;
                 };
-
-                doc.text(`Resumen de Cálculo`, 20, y);
-                y += 15;
 
                 switch(type) {
                     case 'aguinaldo':
@@ -1359,7 +1370,14 @@
                         y += 15;
                         doc.setFontSize(12);
                         addLine("Salario Bruto:", formatearMoneda(data.salarioBruto));
-                        addLine("Descuento IPS (9%):", "- " + formatearMoneda(data.descuentoIps));
+                        
+                        doc.setFont('Helvetica', 'bold');
+                        doc.setTextColor(200, 0, 0); // Rojo
+                        doc.text("Descuento IPS (9%):", 20, y);
+                        doc.setFont('Helvetica', 'normal');
+                        doc.text("- " + formatearMoneda(data.descuentoIps), 110, y);
+                        y += 10;
+                        
                         addTotal("Neto a Cobrar:", formatearMoneda(data.salarioNeto));
                         break;
                         
@@ -1382,6 +1400,7 @@
                         doc.setFontSize(12);
                         addLine("Salario Bruto:", formatearMoneda(data.salarioBruto));
                         addLine("Valor Hora Normal:", formatearMoneda(data.valorHoraNormal));
+                        y += 5;
                         addLine("Monto Horas Diurnas:", formatearMoneda(data.montoDiurnas));
                         addLine("Monto Horas Nocturnas:", formatearMoneda(data.montoNocturnas));
                         addLine("Monto Horas Feriado:", formatearMoneda(data.montoFeriado));
@@ -1409,10 +1428,10 @@
                 }
 
                 // Pie de página del PDF
-                y += 20;
+                y = doc.internal.pageSize.height - 30;
                 doc.setFontSize(10);
                 doc.setTextColor(150, 150, 150);
-                doc.text(`Generado por Calculadoras Laborales PY (de Rodrigo Cabrera) el ${fecha}`, 20, y);
+                doc.text(`Generado con Herramientas Laborales v5.7.0 el ${fecha}`, 20, y);
                 doc.text("Este documento es una estimación no oficial.", 20, y + 5);
 
                 doc.save(`Resumen_${type}_${fecha}.pdf`);
