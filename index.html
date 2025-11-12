@@ -146,9 +146,18 @@
         <!-- Sección de Resultado (inicialmente oculta) -->
         <div id="resultadoContenedor" class="hidden mt-10 text-center p-8 bg-green-50 border-t-4 border-green-500 rounded-lg shadow-inner">
             <p class="text-lg font-medium text-green-800">Tu aguinaldo correspondiente es:</p>
-            <p id="resultadoMonto" class="text-5xl font-extrabold text-green-700 my-3">
+            
+            <!--
+                CAMBIO REALIZADO AQUÍ:
+                - Antes: class="text-5xl font-extrabold text-green-700 my-3"
+                - Ahora: class="text-4xl md:text-5xl font-extrabold text-green-700 my-3"
+                Esto hace que el texto sea "text-4xl" (más pequeño) en móviles (por defecto)
+                y "text-5xl" en pantallas medianas (md) y superiores.
+            -->
+            <p id="resultadoMonto" class="text-4xl md:text-5xl font-extrabold text-green-700 my-3">
                 Gs. 0
             </p>
+            
             <p id="infoLey" class="text-sm text-gray-600 mt-4 max-w-md mx-auto">
                 *Cálculo basado en el Art. 243 del Código Laboral: (Suma de todas las remuneraciones del año) / 12.
             </p>
