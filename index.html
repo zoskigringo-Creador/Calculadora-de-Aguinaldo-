@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale-1.0">
     <title>Calculadora de Aguinaldo - Paraguay</title>
     <!-- 1. Carga de Tailwind CSS (para el diseño moderno) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -32,7 +32,7 @@
             display: none;
         }
 
-        /* --- NUEVA ANIMACIÓN PARA EL RESULTADO --- */
+        /* --- Animación para el resultado --- */
         @keyframes fadeInScaleUp {
             from {
                 opacity: 0;
@@ -43,13 +43,9 @@
                 transform: translateY(0) scale(1);
             }
         }
-
-        /* Clase que se añadirá con JavaScript para activar la animación */
         .animate-result {
             animation: fadeInScaleUp 0.4s ease-out forwards;
         }
-        /* --- FIN DE LA NUEVA ANIMACIÓN --- */
-
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
@@ -74,14 +70,25 @@
         </div>
     </div>
 
-    <!-- 2. Reloj y Fecha (Minimalista) -->
-    <div id="clockDisplay" class="fixed top-4 right-4 p-3 bg-white/70 backdrop-blur-sm rounded-lg shadow-md text-gray-800 text-right">
-        <div id="date" class="text-sm font-semibold"></div>
-        <div id="time" class="text-xs font-medium"></div>
+    <!-- 
+      2. RELOJ Y FECHA (MODIFICADO)
+      - Ya no es 'fixed' (flotante).
+      - Está oculto ('hidden') y se mostrará con JS.
+      - Tiene 'w-full max-w-3xl' para coincidir con el ancho de la tarjeta.
+      - 'mt-16' se movió aquí para dar espacio superior.
+    -->
+    <div id="clockDisplay" class="hidden w-full max-w-3xl mx-auto text-center mt-16 mb-4">
+        <div class="sm:flex sm:justify-center sm:gap-4 text-gray-600">
+            <div id="date" class="text-sm font-semibold"></div>
+            <div id="time" class="text-sm font-medium"></div>
+        </div>
     </div>
 
-    <!-- Contenedor principal de la calculadora (Oculto al inicio) -->
-    <div id="appContainer" class="hidden bg-white p-8 md:p-10 rounded-2xl shadow-xl w-full max-w-3xl mx-auto mt-16">
+    <!-- 
+      Contenedor principal de la calculadora (MODIFICADO)
+      - Se quitó el 'mt-16' de aquí.
+    -->
+    <div id="appContainer" class="hidden bg-white p-8 md:p-10 rounded-2xl shadow-xl w-full max-w-3xl mx-auto">
 
         <!-- Título y Descripción -->
         <h1 class="text-3xl md:text-4xl font-bold text-blue-700 mb-2 text-center">
@@ -101,8 +108,6 @@
         <!-- Formulario de Entradas (Grid) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-5 mb-8">
             
-            <!-- Cambiamos type="number" a type="text" para permitir el formato de millares -->
-            <!-- Añadimos inputmode="numeric" para teclados móviles -->
             <div>
                 <label for="enero" class="block text-sm font-medium text-gray-700 mb-1">Enero</label>
                 <input type="text" id="enero" placeholder="Gs. 0" inputmode="numeric" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
@@ -166,7 +171,6 @@
         <div id="resultadoContenedor" class="hidden mt-10 text-center p-8 bg-green-50 border-t-4 border-green-500 rounded-lg shadow-inner">
             <p class="text-lg font-medium text-green-800">Tu aguinaldo correspondiente es:</p>
             
-            <!-- (Clase corregida de la vez anterior para móviles) -->
             <p id="resultadoMonto" class="text-4xl md:text-5xl font-extrabold text-green-700 my-3">
                 Gs. 0
             </p>
@@ -179,13 +183,11 @@
 
     <!-- 3. Versión -->
     <footer class="text-center text-gray-500 text-sm py-6">
-        <!-- Puedes actualizar la versión si quieres, ej: v1.3.0 -->
         Calculadora de Aguinaldo v1.3.0 - Creado por Rodrigo Cabrera
     </footer>
 
     <!-- 4. Lógica de JavaScript (Actualizada) -->
     <script>
-        // Espera a que todo el contenido de la página esté cargado
         document.addEventListener('DOMContentLoaded', () => {
 
             // --- Elementos del DOM ---
@@ -199,7 +201,8 @@
             const acceptBtn = document.getElementById('acceptBtn');
             const appContainer = document.getElementById('appContainer');
             
-            // Reloj
+            // Reloj (MODIFICADO)
+            const clockDisplay = document.getElementById('clockDisplay'); // Se añade el reloj principal
             const dateEl = document.getElementById('date');
             const timeEl = document.getElementById('time');
 
@@ -222,30 +225,26 @@
                 timeEl.textContent = now.toLocaleTimeString('es-PY', timeOptions);
             };
             
-            updateClock(); // Carga inicial (se ejecuta 1 vez)
-            
-            // --- CAMBIO: Se eliminó el "setInterval(updateClock, 1000);" ---
-            // Esto hace que el reloj quede estático con la hora de carga.
+            updateClock(); // Carga inicial (estática)
 
-            // --- Lógica del Modal ---
+            // --- Lógica del Modal (MODIFICADA) ---
             acceptBtn.addEventListener('click', () => {
                 // Ocultar modal
                 welcomeModal.style.opacity = '0';
                 setTimeout(() => {
                     welcomeModal.classList.add('hidden');
-                }, 300); // Espera a que termine la transición de opacidad
+                }, 300); 
                 
-                // Mostrar calculadora
+                // Mostrar calculadora Y EL RELOJ
                 appContainer.classList.remove('hidden');
-                inputs[0].focus(); // Foco en el primer input
+                clockDisplay.classList.remove('hidden'); // <-- Se añade esta línea
+                inputs[0].focus(); 
             });
 
-            // --- Lógica de Formato de Millares (al tipear) ---
+            // --- Lógica de Formato de Millares ---
             const formatInput = (e) => {
                 const input = e.target;
                 let value = input.value;
-                
-                // 1. Limpiar el valor: quitar todo excepto los números
                 let rawValue = value.replace(/[^0-9]/g, '');
                 
                 if (rawValue === '') {
@@ -253,13 +252,8 @@
                     return;
                 }
                 
-                // 2. Convertir a número (para asegurar que no hay ceros a la izquierda)
                 const numberValue = parseInt(rawValue, 10);
-                
-                // 3. Formatear a 'es-PY' (que usa '.')
                 const formattedValue = new Intl.NumberFormat('es-PY').format(numberValue);
-                
-                // 4. Actualizar el valor del input
                 input.value = formattedValue;
             };
 
@@ -268,67 +262,46 @@
                 return new Intl.NumberFormat('es-PY', {
                     style: 'currency',
                     currency: 'PYG',
-                    maximumFractionDigits: 0, // No usamos decimales para Gs.
+                    maximumFractionDigits: 0, 
                     minimumFractionDigits: 0
                 }).format(numero);
             };
 
-            // Función principal de cálculo (MODIFICADA para animación)
+            // Función principal de cálculo (con animación)
             const calcularAguinaldo = () => {
                 let totalAnual = 0;
-
-                // 1. Sumamos el valor de cada mes
                 inputs.forEach(input => {
-                    // Limpiamos los puntos '.' antes de sumar
                     const rawValue = input.value.replace(/\./g, '');
                     totalAnual += parseFloat(rawValue) || 0;
                 });
 
-                // 2. Calculamos el aguinaldo (Total / 12)
                 const aguinaldo = totalAnual / 12;
-
-                // 3. Mostramos el resultado
                 resultadoMonto.textContent = formatearMoneda(aguinaldo);
                 
-                // --- INICIO DE LA NUEVA LÓGICA DE ANIMACIÓN ---
-                
-                // 1. Quita la clase de animación para "resetearla" (por si se calcula varias veces)
+                // Lógica de animación
                 resultadoContenedor.classList.remove('animate-result');
-                
-                // 2. Asegura que sea visible
                 resultadoContenedor.classList.remove('hidden'); 
-
-                // 3. FORZAR REFLOW (truco para reiniciar la animación)
-                // Esto hace que el navegador "vea" el elemento sin la clase de animación
-                // antes de volver a añadirla.
                 void resultadoContenedor.offsetWidth; 
-
-                // 4. Vuelve a añadir la clase para que la animación se ejecute
                 resultadoContenedor.classList.add('animate-result');
-                
-                // --- FIN DE LA NUEVA LÓGICA ---
             };
             
-            // Función para limpiar (MODIFICADA para animación)
+            // Función para limpiar
             const limpiarCampos = () => {
                 inputs.forEach(input => {
-                    input.value = ''; // Borra el valor de cada input
+                    input.value = ''; 
                 });
-                resultadoContenedor.classList.add('hidden'); // Oculta el resultado
-                resultadoContenedor.classList.remove('animate-result'); // Quita la clase de anim.
-                inputs[0].focus(); // Pone el foco en el primer input (Enero)
+                resultadoContenedor.classList.add('hidden'); 
+                resultadoContenedor.classList.remove('animate-result'); 
+                inputs[0].focus(); 
             };
 
             // Asignamos las funciones a los botones
             calcularBtn.addEventListener('click', calcularAguinaldo);
             limpiarBtn.addEventListener('click', limpiarCampos);
             
-            // Opcional: Permitir calcular presionando "Enter" y formatear
+            // Event Listeners para inputs
             inputs.forEach(input => {
-                // Formatea mientras se tipea
                 input.addEventListener('input', formatInput);
-
-                // Calcula con "Enter"
                 input.addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') {
                         calcularAguinaldo();
