@@ -31,6 +31,25 @@
         #appContainer.hidden + footer {
             display: none;
         }
+
+        /* --- NUEVA ANIMACIÓN PARA EL RESULTADO --- */
+        @keyframes fadeInScaleUp {
+            from {
+                opacity: 0;
+                transform: translateY(15px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Clase que se añadirá con JavaScript para activar la animación */
+        .animate-result {
+            animation: fadeInScaleUp 0.4s ease-out forwards;
+        }
+        /* --- FIN DE LA NUEVA ANIMACIÓN --- */
+
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
@@ -147,13 +166,7 @@
         <div id="resultadoContenedor" class="hidden mt-10 text-center p-8 bg-green-50 border-t-4 border-green-500 rounded-lg shadow-inner">
             <p class="text-lg font-medium text-green-800">Tu aguinaldo correspondiente es:</p>
             
-            <!--
-                CAMBIO REALIZADO AQUÍ:
-                - Antes: class="text-5xl font-extrabold text-green-700 my-3"
-                - Ahora: class="text-4xl md:text-5xl font-extrabold text-green-700 my-3"
-                Esto hace que el texto sea "text-4xl" (más pequeño) en móviles (por defecto)
-                y "text-5xl" en pantallas medianas (md) y superiores.
-            -->
+            <!-- (Clase corregida de la vez anterior para móviles) -->
             <p id="resultadoMonto" class="text-4xl md:text-5xl font-extrabold text-green-700 my-3">
                 Gs. 0
             </p>
@@ -166,7 +179,8 @@
 
     <!-- 3. Versión -->
     <footer class="text-center text-gray-500 text-sm py-6">
-        Calculadora de Aguinaldo v1.2.0 - Creado por Rodrigo Cabrera
+        <!-- Puedes actualizar la versión si quieres, ej: v1.3.0 -->
+        Calculadora de Aguinaldo v1.3.0 - Creado por Rodrigo Cabrera
     </footer>
 
     <!-- 4. Lógica de JavaScript (Actualizada) -->
@@ -207,8 +221,11 @@
                 dateEl.textContent = now.toLocaleDateString('es-PY', dateOptions);
                 timeEl.textContent = now.toLocaleTimeString('es-PY', timeOptions);
             };
-            updateClock(); // Carga inicial
-            setInterval(updateClock, 1000); // Actualiza cada segundo
+            
+            updateClock(); // Carga inicial (se ejecuta 1 vez)
+            
+            // --- CAMBIO: Se eliminó el "setInterval(updateClock, 1000);" ---
+            // Esto hace que el reloj quede estático con la hora de carga.
 
             // --- Lógica del Modal ---
             acceptBtn.addEventListener('click', () => {
@@ -256,13 +273,13 @@
                 }).format(numero);
             };
 
-            // Función principal de cálculo (MODIFICADA)
+            // Función principal de cálculo (MODIFICADA para animación)
             const calcularAguinaldo = () => {
                 let totalAnual = 0;
 
                 // 1. Sumamos el valor de cada mes
                 inputs.forEach(input => {
-                    // (MODIFICACIÓN) Limpiamos los puntos '.' antes de sumar
+                    // Limpiamos los puntos '.' antes de sumar
                     const rawValue = input.value.replace(/\./g, '');
                     totalAnual += parseFloat(rawValue) || 0;
                 });
@@ -272,15 +289,33 @@
 
                 // 3. Mostramos el resultado
                 resultadoMonto.textContent = formatearMoneda(aguinaldo);
-                resultadoContenedor.classList.remove('hidden'); // Hacemos visible el contenedor
+                
+                // --- INICIO DE LA NUEVA LÓGICA DE ANIMACIÓN ---
+                
+                // 1. Quita la clase de animación para "resetearla" (por si se calcula varias veces)
+                resultadoContenedor.classList.remove('animate-result');
+                
+                // 2. Asegura que sea visible
+                resultadoContenedor.classList.remove('hidden'); 
+
+                // 3. FORZAR REFLOW (truco para reiniciar la animación)
+                // Esto hace que el navegador "vea" el elemento sin la clase de animación
+                // antes de volver a añadirla.
+                void resultadoContenedor.offsetWidth; 
+
+                // 4. Vuelve a añadir la clase para que la animación se ejecute
+                resultadoContenedor.classList.add('animate-result');
+                
+                // --- FIN DE LA NUEVA LÓGICA ---
             };
             
-            // Función para limpiar
+            // Función para limpiar (MODIFICADA para animación)
             const limpiarCampos = () => {
                 inputs.forEach(input => {
                     input.value = ''; // Borra el valor de cada input
                 });
                 resultadoContenedor.classList.add('hidden'); // Oculta el resultado
+                resultadoContenedor.classList.remove('animate-result'); // Quita la clase de anim.
                 inputs[0].focus(); // Pone el foco en el primer input (Enero)
             };
 
